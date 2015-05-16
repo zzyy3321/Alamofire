@@ -1,6 +1,6 @@
 // DownloadTests.swift
 //
-// Copyright (c) 2014–2015 Alamofire (http://alamofire.org)
+// Copyright (c) 2014–2015 Alamofire Software Foundation (http://alamofire.org/)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,15 +40,13 @@ class AlamofireDownloadResponseTestCase: XCTestCase {
 
         Alamofire.download(.GET, URL, destination)
             .response { request, response, _, error in
-                expectation.fulfill()
-
                 XCTAssertNotNil(request, "request should not be nil")
                 XCTAssertNotNil(response, "response should not be nil")
 
                 XCTAssertNil(error, "error should be nil")
 
                 let fileManager = NSFileManager.defaultManager()
-                let directory = fileManager.URLsForDirectory(self.searchPathDirectory, inDomains: self.searchPathDomain)[0] as NSURL
+                let directory = fileManager.URLsForDirectory(self.searchPathDirectory, inDomains: self.searchPathDomain)[0] as! NSURL
 
                 var fileManagerError: NSError?
                 let contents = fileManager.contentsOfDirectoryAtURL(directory, includingPropertiesForKeys: nil, options: NSDirectoryEnumerationOptions.SkipsHiddenFiles, error: &fileManagerError)!
@@ -60,12 +58,12 @@ class AlamofireDownloadResponseTestCase: XCTestCase {
                 let suggestedFilename = "\(numberOfLines).json"
                 #endif
 
-                let predicate = NSPredicate(format: "lastPathComponent = '\(suggestedFilename)'")!
+                let predicate = NSPredicate(format: "lastPathComponent = '\(suggestedFilename)'")
                 let filteredContents = (contents as NSArray).filteredArrayUsingPredicate(predicate)
                 XCTAssertEqual(filteredContents.count, 1, "should have one file in Documents")
 
-                let file = filteredContents.first as NSURL
-                XCTAssertEqual(file.lastPathComponent!, "\(suggestedFilename)", "filename should bsuggestedFilenameines)")
+                let file = filteredContents.first as! NSURL
+                XCTAssertEqual(file.lastPathComponent!, "\(suggestedFilename)", "filename should be \(suggestedFilename)")
 
                 if let data = NSData(contentsOfURL: file) {
                     XCTAssertGreaterThan(data.length, 0, "data length should be non-zero")
@@ -74,9 +72,11 @@ class AlamofireDownloadResponseTestCase: XCTestCase {
                 }
 
                 fileManager.removeItemAtURL(file, error: nil)
+
+                expectation.fulfill()
         }
 
-        waitForExpectationsWithTimeout(10) { (error) in
+        waitForExpectationsWithTimeout(10) { error in
             XCTAssertNil(error, "\(error)")
         }
     }
@@ -90,17 +90,17 @@ class AlamofireDownloadResponseTestCase: XCTestCase {
         let destination = Alamofire.Request.suggestedDownloadDestination(directory: searchPathDirectory, domain: searchPathDomain)
 
         let download = Alamofire.download(.GET, URL, destination)
-        download.progress { (bytesRead, totalBytesRead, totalBytesExpectedToRead) -> Void in
-            expectation.fulfill()
-
+        download.progress { bytesRead, totalBytesRead, totalBytesExpectedToRead in
             XCTAssert(bytesRead > 0, "bytesRead should be > 0")
             XCTAssert(totalBytesRead > 0, "totalBytesRead should be > 0")
             XCTAssert(totalBytesExpectedToRead == -1, "totalBytesExpectedToRead should be -1")
 
             download.cancel()
+
+            expectation.fulfill()
         }
 
-        waitForExpectationsWithTimeout(10) { (error) in
+        waitForExpectationsWithTimeout(10) { error in
             XCTAssertNil(error, "\(error)")
         }
     }

@@ -1,4 +1,4 @@
-// RequestTests.swift
+// DownloadTests.swift
 //
 // Copyright (c) 2014–2015 Alamofire Software Foundation (http://alamofire.org/)
 //
@@ -24,53 +24,22 @@ import Foundation
 import Alamofire
 import XCTest
 
-class AlamofireManagerTestCase: XCTestCase {
-    func testSetStartRequestsImmediatelyToFalseAndResumeRequest() {
-        let manager = Alamofire.Manager()
-        manager.startRequestsImmediately = false
-
-        let URL = NSURL(string: "http://httpbin.org/get")!
-        let URLRequest = NSURLRequest(URL: URL)
+class AlamofireTLSEvaluationTestCase: XCTestCase {
+    func testSSLCertificateCommonNameValidation() {
+        let URL = "https://testssl-expire.disig.sk/"
 
         let expectation = expectationWithDescription("\(URL)")
 
-        manager.request(URLRequest)
-            .response { _, _, _, _ in expectation.fulfill() }
-            .resume()
+        Alamofire.request(.GET, URL)
+            .response { _, _, _, error in
+                XCTAssertNotNil(error, "error should not be nil")
+                XCTAssert(error?.code == NSURLErrorServerCertificateUntrusted, "error should be NSURLErrorServerCertificateUntrusted")
+
+                expectation.fulfill()
+        }
 
         waitForExpectationsWithTimeout(10) { error in
             XCTAssertNil(error, "\(error)")
         }
-    }
-
-    func testReleasingManagerWithPendingRequestDeinitializesSuccessfully() {
-        var manager: Manager? = Alamofire.Manager()
-        manager!.startRequestsImmediately = false
-
-        let URL = NSURL(string: "http://httpbin.org/get")!
-        let URLRequest = NSURLRequest(URL: URL)
-
-        let request = manager!.request(URLRequest)
-
-        manager = nil
-
-        XCTAssert(request.task.state == .Suspended)
-        XCTAssertNil(manager)
-    }
-
-    func testReleasingManagerWithPendingCanceledRequestDeinitializesSuccessfully() {
-        var manager: Manager? = Alamofire.Manager()
-        manager!.startRequestsImmediately = false
-
-        let URL = NSURL(string: "http://httpbin.org/get")!
-        let URLRequest = NSURLRequest(URL: URL)
-
-        let request = manager!.request(URLRequest)
-        request.cancel()
-
-        manager = nil
-
-        XCTAssert(request.task.state == .Canceling)
-        XCTAssertNil(manager)
     }
 }
